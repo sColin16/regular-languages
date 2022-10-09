@@ -105,12 +105,12 @@ class DFA(Generic[T, U]):
 
     def transition_function(self, state: T, symbol: U) -> T:
         if state not in self.states:
-            raise Exception(f'Error computing transition: {state} is not a valid DFA state')
+            raise Exception(f'Error computing transition: {state} is not a valid state')
 
         if symbol not in self.alphabet:
             raise Exception(f'Error computing transition: {symbol} is not in the alphabet')
 
-        return self.transition[state][symbol]
+        return self.transition_map[state][symbol]
 
     def simulate(self, test_string: List[U], start_state=None) -> T:
         '''
@@ -146,17 +146,6 @@ class DFA(Generic[T, U]):
         Returns the number of strings accepted by the DFA, or -1 if DFA has
         infinite size
         '''
-
-        raise NotImplementedError
-
-    def asNFA(self) -> NFA:
-        '''
-        Returns an NFA that recognizes the same language as this DFA
-        '''
-
-        # Just change the types of the states to be sets
-        # Optionally consider removing the dead state since that can be
-        # implicit in the DFA
 
         raise NotImplementedError
 
