@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from typing import Callable, Dict, Generic, List, Set, TypeAlias, TypeVar
 
@@ -105,7 +106,7 @@ class DFA(Generic[T, U]):
                 continue
 
             # Otherwise, direct all undefined transitions for the state to the dead state
-            for symbol in symbols:
+            for symbol in alphabet:
                 if symbol not in final_transition_map[state]:
                     final_transition_map[state][symbol] = None
 
@@ -126,15 +127,15 @@ class DFA(Generic[T, U]):
 
         return cls.from_transition_map(transition_map, 0, accept_states)
 
-    @classmethod
-    def from_NFA(cls, nfa: NFA):
-        '''
-        Constructs a DFA that recognizes the same language as the provided NFA
-        '''
+    # @classmethod
+    # def from_NFA(cls, nfa: NFA):
+    #     '''
+    #     Constructs a DFA that recognizes the same language as the provided NFA
+    #     '''
 
-        # Basically just modify the transition map to return sets
+    #     # Basically just modify the transition map to return sets
 
-        pass
+    #     pass
 
     def get_transition_list(self):
         '''
@@ -201,7 +202,8 @@ class DFA(Generic[T, U]):
 
         return self.simulate(test_string) in self.accept_states
 
-    def get_minimal(self) -> DFA:
+    @classmethod
+    def get_minimal(self):
         '''
         Returns the unique equivalent DFA with the minimal number of states
         '''
