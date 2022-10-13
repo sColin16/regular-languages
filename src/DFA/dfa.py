@@ -21,6 +21,28 @@ class DFA(Generic[T, U]):
     start_state: T
     accept_states: Set[T]
 
+    def __post_init__(self):
+        '''
+        Verifies that the constraints on the components of the DFA are met
+        '''
+
+        assert self.start_state in self.states
+        assert self.accept_states.issubset(self.states)
+
+        for state in self.states:
+            if state not in self.transition_map:
+                raise Exception(f'State {state} is missing from the domain of ' +
+                                'the DFA\'s transition function')
+
+            for symbol in self.alphabet:
+                if symbol not in self.alphabet:
+                    raise Exception(f'Symbol {symbol} is missing from the domain of ' +
+                                    'the DFA\'s transition function')
+
+                if self.transition_map[state][symbol] not in self.states:
+                    raise Exception('DFA\'s transition function returned state '+
+                                    f'{state}, which is not a valid state')
+
     @classmethod
     def from_transition_function(cls, states: Set[T], alphabet: Set[U],
                                  transition_function: TransitionFunction,
@@ -31,10 +53,15 @@ class DFA(Generic[T, U]):
         DFA, even if the function accepts other states and/or symbols
         '''
 
-        # Explicitly construct the transition map
-            # Detect invalid output states and raise an error
-        # Then just pass everything to the constructor
-        raise NotImplementedError
+        transition_map = defaultdict(dict)
+
+        for state in states:
+            for symbol in alphabet:
+                next_state = transition_function(state, symbol)
+
+                transition_map[state][symbol] = next_state
+
+        return cls(states, alphabet, transition_map, start_state, accept_states)
 
     @classmethod
     def from_transition_map(cls, transition_map: TransitionMap, start_state: T,
@@ -46,13 +73,44 @@ class DFA(Generic[T, U]):
         considered transitions to a dead state
         '''
 
-        # Reconstruct the transition map to remove ambiguities over dead states
-            # Potentialy optimize to combine all dead states into one dead state
-        # Determine the final set of states
-        # Determine the alphabet that is implicit in the map
-        # Pass everything into the construcotr
+        # TODO: handle a None state being passed, or document that
+        # TODO: only create the None state if it's needed
+        # TODO: try to consolidate the dead states if possible
 
-        raise NotImplementedError
+        states = set([None])
+        alphabet = set()
+        final_transition_map = defaultdict(dict)
+
+        # First, construct the pieces of the transition map we do have
+        for state in transition_map:
+            states.add(state)
+
+            for symbol in transition_map[state]:
+                alphabet.add(symbol)
+
+                next_state = transition_map[state][symbol]
+
+                final_transition_map[state][symbol] = next_state
+                states.add(next_state)
+
+        # Create a dead state for the DFA, which may not be necessary
+        final_transition_map[None] = {symbol: None for symbol in alphabet}
+
+        # Then, take another pass and fill in dead states and dead state transitions
+        for state in states:
+            # This is a dead state if the state had no defined transitions
+            # So fill in all the transitions to loop back to this state
+            if state not in final_transition_map:
+                final_transition_map[state] = {symbol: state for symbol in alphabet}
+                continue
+
+            # Otherwise, direct all undefined transitions for the state to the dead state
+            for symbol in symbols:
+                if symbol not in final_transition_map[state]:
+                    final_transition_map[state][symbol] = None
+
+
+        return cls(states, alphabet, final_transition_map, start_state, accept_states)
 
     @classmethod
     def from_transition_list(cls, transition_list: TransitionList,
@@ -63,9 +121,20 @@ class DFA(Generic[T, U]):
         defined in an array, and start state is always 0 for convenience
         '''
 
-        # Convert the list to a map
-        # Call the from_transition_map function
-        raise NotImplementedError
+        transition_map = {index: transitions for index, transitions in
+                          enumerate(transition_list)}
+
+        return cls.from_transition_map(transition_map, 0, accept_states)
+
+    @classmethod
+    def from_NFA(cls, nfa: NFA):
+        '''
+        Constructs a DFA that recognizes the same language as the provided NFA
+        '''
+
+        # Basically just modify the transition map to return sets
+
+        pass
 
     def get_transition_list(self):
         '''
