@@ -4,8 +4,6 @@ from enum import Enum, auto
 from itertools import product
 from typing import Callable, Dict, Generic, List, Set, TypeAlias, TypeVar
 
-from regular_languages.NFA import NFA
-
 T = TypeVar('T')
 U = TypeVar('U')
 
