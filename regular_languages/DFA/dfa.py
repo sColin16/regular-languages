@@ -4,6 +4,8 @@ from enum import Enum, auto
 from itertools import product
 from typing import Callable, Dict, Generic, List, Set, TypeAlias, TypeVar
 
+from regular_languages.NFA import NFA
+
 T = TypeVar('T')
 U = TypeVar('U')
 
@@ -118,17 +120,6 @@ class DFA(Generic[T, U]):
         # We can't use classmethod because subclasses could restrict non-int states
         return DFA.from_transition_map(transition_map, 0, accept_states)
 
-    # @classmethod
-    # def from_NFA(cls, nfa: NFA):
-    #     '''
-    #     Constructs a DFA that recognizes the same language as the provided NFA
-    #     '''
-
-    #     # Use subset construction to do this, possibly creating an intermediate
-    #     # NFA that removes the epsilon transitions
-
-    #     pass
-
     def simulate(self, test_string: Iterable[U], start_state=None) -> T:
         '''
         Simulates the DFA, returning the resulting state. This is the extended
@@ -148,6 +139,42 @@ class DFA(Generic[T, U]):
         '''
 
         return self.simulate(test_string) in self.accept_states
+
+    def drop_disconnected(self):
+        '''
+        Returns an equivalent DFA with with states that are not reachable from
+        the start state removed
+        '''
+
+        reachable = {self.start_state}
+        queue = [self.start_state]
+
+        while len(queue) > 0:
+            state = queue.pop()
+
+            for symbol in self.alphabet:
+                next_state = self.transition_function(state, symbol)
+
+                if next_state not in reachable:
+                    reachable.add(next_state)
+                    queue.append(next_state)
+
+        return DFA.from_unsafe_transition_func(reachable, self.alphabet,
+                    self.transition_function, self.start_state,
+                    self.accept_states.intersection(reachable))
+
+    def minimize(self):
+        '''
+        Returns the unique equivalent DFA with the minimal number of states
+        '''
+
+        # TODO: should this call drop_disconnected? Or do we consider those to
+        # be separate operations?
+        # TODO: the states should probably frozen sets of original states
+        # We can run a renaming function to get a tranisition list if desired
+        # TODO: can this remove states not connected to the start state? (e.g.
+        # the dead state generated) That would be ideal
+        pass
 
     def get_transition_map(self):
         '''
@@ -174,6 +201,12 @@ class DFA(Generic[T, U]):
 
         pass
 
+    def to_table(self):
+        '''
+        Constructs a table that visualizes the DFA, with start state and accept states
+        '''
+
+        pass
 
     def get_transition_list(self):
         '''
@@ -189,17 +222,6 @@ class DFA(Generic[T, U]):
 
         pass
 
-    @classmethod
-    def get_minimal(self):
-        '''
-        Returns the unique equivalent DFA with the minimal number of states.
-        '''
-
-        # TODO: the states should probably frozen sets of original states
-        # We can run a renaming function to get a tranisition list if desired
-        # TODO: can this remove states not connected to the start state? (e.g.
-        # the dead state generated) That would be ideal
-        pass
 
     def size(self) -> int:
         '''

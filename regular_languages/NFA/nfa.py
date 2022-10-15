@@ -116,27 +116,6 @@ class NFA(Generic[T, U]):
 
         return NFA.from_transition_map(transition_map, 0, accept_states)
 
-    # @classmethod
-    # def from_DFA(cls, dfa: DFA):
-    #     '''
-    #     Constructs an NFA that recognizes the same language as the provided DFA
-    #     '''
-
-    #     # Use subset construction to do this
-    #     pass
-
-    # @classmethod
-    # def from_Regex(cls, regex: Regex):
-    #     '''
-    #     Constructs an NFA the recognizes the same langauge as the provided regex
-    #     '''
-        
-    #     # THis may be possible to do recursively here, or might require a
-    #     # recursive helper function to more efficiently build the transition
-    #     # map (at least to build starting at a certain numeric id)
-
-    #     pass
-
     def epsilon_closure(self, states: Set[T]) -> Set[T]:
         '''
         Computes the epsilon closure of a set of states. That is, the set of
