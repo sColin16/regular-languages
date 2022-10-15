@@ -1,12 +1,22 @@
+from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Dict Generic, Set, TypeAlias, TypeVar
+from enum import Enum, auto
+from itertools import product
+from typing import Callable, Dict, Generic, Iterable, List, Set, TypeVar
+
+class SpecialSymbols(Enum):
+    '''
+    A helper enum to represent the empty string as a symbol for transitions
+    '''
+
+    EMPTY = auto()
 
 T = TypeVar('T')
 U = TypeVar('U')
 
-TransitionFunction: TypeAlias = Callable[[T, U], Set[T]]
-TransitionMap: TypeAlias = Dict[T, Dict[U, Set[T]]]
-TransitionList: TypeAlias = List[Dict[U, Set[int]]]
+TransitionFunction = Callable[[T, U | SpecialSymbols], Set[T]]
+TransitionMap = Dict[T, Dict[U | SpecialSymbols, Set[T]]]
+TransitionList = List[Dict[U | SpecialSymbols, Set[int]]]
 
 @dataclass
 class NFA(Generic[T, U]):
@@ -15,43 +25,82 @@ class NFA(Generic[T, U]):
     any given type, based on the five components of an NFA
     '''
 
-    # TODO: how to handle empty strings from a type standpoint? A literal empty
-    # string? or a special type (which would work better with types, less well
-    # with ease of use
     states: Set[T]
     alphabet: Set[U]
-    transition_map: TransitionMap
+    transition_function: TransitionFunction
     start_state: T
     accept_states: Set[T]
 
-    # TODO: determine how to handle empty string transitions
-    @classmethod
-    def from_transition_function(cls, states: Set[T], alphabet: Set[U],
-                                 transition_function: TransitionFunction,
-                                 start_state:T, accept_states: Set[T]):
+    def __post_init__(self):
         '''
-        Constructs an NFA from an arbitrary transition function. Note that the
-        provided set of states and alphabet defines the domain of the NFAs
-        transition function, even if the provided function accepts other
-        symbols/states
+        Verifies that the constraints of the NFA have been met
         '''
 
-        # Follow a similar procedure to NFAs, but will take more work to
-        # identify invalid states contained within the sets
-        raise NotImplementedError
+        if self.start_state not in self.states:
+            raise Exception(f'Start state {self.start_state} is not in the set of states')
+
+        if not self.accept_states.issubset(self.states):
+            raise Exception('The accept states are not a subset of the valid states')
+
+        for state, symbol in product(self.states, self.alphabet.union({SpecialSymbols.EMPTY})):
+            if not self.transition_function(state, symbol).issubset(self.states):
+                raise Exception('NFA\'s transition function returned a set of states '+
+                                'that are not a subset of the valid states')
 
     @classmethod
-    def from_transition_map(cls, transition_map: TransitionMap, start_state: T,
+    def from_unsafe_transition_func(cls, states: Set[T], alphabet: Set[U],
+                                 unsafe_transition_func: TransitionFunction,
+                                 start_state: T, accept_states: Set[T]):
+        '''
+        Constructs an NFA from an unsafe transition function, a transition
+        function that may be defined for a state/symbol combination that are
+        not considered valid for the NFA, by wrapping the function in checks
+        that the arguments are in the true domain
+        '''
+
+        def safe_transition_func(state: T, symbol: U | SpecialSymbols) -> Set[T]:
+            if state not in states:
+                raise Exception(f'{state} is not a valid state')
+
+            if symbol not in alphabet.union({SpecialSymbols.EMPTY}):
+                raise Exception(f'{symbol} is not in the alphabet or the empty string')
+
+            return unsafe_transition_func(state, symbol)
+
+        return cls(states, alphabet, safe_transition_func, start_state, accept_states)
+
+    @classmethod
+    def from_transition_map(cls, transition_map: TransitionMap[T, U], start_state: T,
                             accept_states: Set[T]):
         '''
-        Constructs an NFA from a transition map, which may be implicit.
-        Transitions that are missing for a state will be assumed to be the
-        empty set
+        Constructs an NFA from a transition map, a nested dictionary that
+        impliclty defines the alphabet and set of staes, and need not
+        explicitly define the transition for every state/symbol combination.
+        Non-explicit transitions are considered the empty set
         '''
 
-        # Similar process to DFAs, but there is no need to handle dead states,
-        # you just direct to the empty set
-        raise NotImplementedError
+        # Unpack the states and alpjabet implied in the transition map
+        states = set(transition_map.keys())\
+                    .union(*(set().union(*(transitions.values())) for transitions
+                             in transition_map.values()))
+
+        # The empty string should not be part of the alphabet
+        # Ignore the type b/c difference removes empty symbols
+        alphabet: Set[U] = set().union(*(transitions.keys() for transitions
+                                 in transition_map.values()))\
+                                         .difference({SpecialSymbols.EMPTY}) # type: ignore 
+
+        def unsafe_transition_func(state: T, symbol: U | SpecialSymbols) -> Set[T]:
+            if state not in transition_map:
+                return set()
+
+            if symbol not in transition_map[state]:
+                return set()
+
+            return transition_map[state][symbol]
+
+        return cls.from_unsafe_transition_func(states, alphabet, unsafe_transition_func,
+                                               start_state, accept_states)
 
     @classmethod
     def from_transition_list(cls, transition_list: TransitionList,
@@ -62,31 +111,54 @@ class NFA(Generic[T, U]):
         defined in an array, and start state is always 0 for convenience
         '''
 
-        # Similar to the NFA, convert the list to a transition map, then call
-        # the transition map constructor helper
+        transition_map = {index: transitions for index, transitions in
+                          enumerate(transition_list)}
 
-        raise NotImplementedError
+        return NFA.from_transition_map(transition_map, 0, accept_states)
 
-    def __post_init__(self):
+    # @classmethod
+    # def from_DFA(cls, dfa: DFA):
+    #     '''
+    #     Constructs an NFA that recognizes the same language as the provided DFA
+    #     '''
+
+    #     # Use subset construction to do this
+    #     pass
+
+    # @classmethod
+    # def from_Regex(cls, regex: Regex):
+    #     '''
+    #     Constructs an NFA the recognizes the same langauge as the provided regex
+    #     '''
+        
+    #     # THis may be possible to do recursively here, or might require a
+    #     # recursive helper function to more efficiently build the transition
+    #     # map (at least to build starting at a certain numeric id)
+
+    #     pass
+
+    def epsilon_closure(self, states: Set[T]) -> Set[T]:
         '''
-        Verifies that the constraints of the NFA have been met
+        Computes the epsilon closure of a set of states. That is, the set of
+        all states reachable from some set of states, using only epsilon
+        transitions (empty strings)
         '''
 
-        assert self.start_state in self.states
-        assert self.accept_states.issubset(self.states)
+        # Perform flood fill with epsilon transitions considered as neighbors
+        visited = set(states)
+        queue = list(states)
 
-        # TODO: verify the domain and range of the transition map
+        while len(queue) > 0:
+            state = queue.pop()
 
-    def transition_function(self, state: T, symbol: U) -> Set[T]:
-        if state not in self.states:
-            raise Exception(f'Error computing transition: {state} is not a valid state')
+            for next_state in self.transition_function(state, SpecialSymbols.EMPTY):
+                if next_state not in visited:
+                    visited.add(next_state)
+                    queue.append(next_state)
 
-        if symbol not in self.alphabet:
-            raise Exception(f'Error computing transition: {symbol} is not in the alphabet')
+        return visited
 
-        return self.transition_map[state][symbol]
-
-    def simulate(self, test_string: List[U], start_states=None) -> Set[T]:
+    def simulate(self, test_string: Iterable[U], start_states=None) -> Set[T]:
         '''
         Simulates the NFA, returning the resulting set of states. This is
         effectively the extended transition function that handles a string
@@ -94,15 +166,17 @@ class NFA(Generic[T, U]):
         '''
 
         curr_states = {self.start_state} if start_states is None else start_states
+        curr_states = self.epsilon_closure(curr_states)
 
         for symbol in test_string:
-            curr_states= set.union(*(self.tranisition_function(state, symbol)
+            next_states = set.union(*(self.transition_function(state, symbol)
                                      for state in curr_states))
+
+            curr_states = self.epsilon_closure(next_states)
 
         return curr_states
 
     def test(self, test_string: List[U]) -> bool:
         final_states = self.simulate(test_string)
 
-        return any(state in self.accept_states for state in final_states)
-
+        return any(final_state in self.accept_states for final_state in final_states)
