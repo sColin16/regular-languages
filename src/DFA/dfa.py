@@ -11,7 +11,7 @@ TransitionFunction: TypeAlias = Callable[[T, U], T]
 TransitionMap: TypeAlias = Dict[T, Dict[U, T]]
 TransitionList: TypeAlias = List[Dict[U, int]]
 
-class State(Enum):
+class SpecialStates(Enum):
     '''
     An helper enum to internally define dead states. This should be treated as
     internal and should not be used to define DFA states externally
@@ -26,7 +26,7 @@ class DFA(Generic[T, U]):
     given type, based on the five components of a DFA
     '''
 
-    states: Set[T]
+    states: Set[T | SpecialStates]
     alphabet: Set[U]
     transition_function: TransitionFunction
     start_state: T
@@ -53,7 +53,7 @@ class DFA(Generic[T, U]):
                                 'which is not a valid state')
 
     @classmethod
-    def from_unsafe_transition_func(cls, states: Set[T], alphabet: Set[U],
+    def from_unsafe_transition_func(cls, states: Set[T | SpecialStates], alphabet: Set[U],
                                     unsafe_transition_func: TransitionFunction,
                                     start_state: T, accept_states: Set[T]):
         '''
@@ -85,30 +85,26 @@ class DFA(Generic[T, U]):
         Non-explicit transitions are considred transitions to a "dead state"
         '''
 
-        # TODO: can I detect if I need the dead state here?
-        # I do think dead state consolidation is the job of the minimize function
-        # not sure if eliminating this state is necessary - I lean no
-
         # Unpack the states and alphabet implied in the transition map
         states = set(transition_map.keys())\
                     .union(*(transitions.values() for transitions in transition_map.values()))\
-                    .union({State.DEAD})
+                    .union({SpecialStates.DEAD})
         alphabet = set().union(*(transitions.keys() for transitions in transition_map.values()))
 
-        def unsafe_transition_func(state: T, symbol: U) -> T:
-            if state is State.DEAD or state not in transition_map:
-                return State.DEAD
+        def unsafe_transition_func(state: T, symbol: U) -> T | SpecialStates:
+            if state is SpecialStates.DEAD or state not in transition_map:
+                return SpecialStates.DEAD
 
             if symbol not in transition_map[state]:
-                return State.DEAD
+                return SpecialStates.DEAD
 
             return transition_map[state][symbol]
 
         return cls.from_unsafe_transition_func(states, alphabet, unsafe_transition_func,
                                                start_state, accept_states)
 
-    @classmethod
-    def from_transition_list(cls, transition_list: TransitionList,
+    @staticmethod
+    def from_transition_list(transition_list: TransitionList,
                              accept_states: Set[int]):
         '''
         Constructs a DFA from a transition list, which is a transition map
@@ -119,7 +115,8 @@ class DFA(Generic[T, U]):
         transition_map = {index: transitions for index, transitions in
                           enumerate(transition_list)}
 
-        return cls.from_transition_map(transition_map, 0, accept_states)
+        # We can't use classmethod because subclasses could restrict non-int states
+        return DFA.from_transition_map(transition_map, 0, accept_states)
 
     # @classmethod
     # def from_NFA(cls, nfa: NFA):
@@ -201,7 +198,7 @@ class DFA(Generic[T, U]):
         # TODO: the states should probably frozen sets of original states
         # We can run a renaming function to get a tranisition list if desired
         # TODO: can this remove states not connected to the start state? (e.g.
-        # the dead state generated)
+        # the dead state generated) That would be ideal
         pass
 
     def size(self) -> int:
