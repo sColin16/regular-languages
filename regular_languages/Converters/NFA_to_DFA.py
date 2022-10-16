@@ -22,7 +22,7 @@ def NFA_to_DFA(nfa: NFA) -> DFA:
         state = queue.pop()
 
         for symbol in nfa.alphabet:
-            next_state = nfa.simulate(symbol, state)
+            next_state = nfa.simulate([symbol], state)
             frozen_state = frozenset(next_state)
 
             transition_map[state][symbol] = frozen_state
