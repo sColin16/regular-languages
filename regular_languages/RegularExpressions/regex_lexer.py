@@ -1,10 +1,14 @@
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Generic, Sequence, Set, Type, TypeVar
+from typing import Dict, List, Generic, Sequence, Set, Type, TypeVar
 
-from regular_languages.helpers.stream import Stream
+from regular_languages.helpers import Stream
 from .regex_tokens import ClosureToken, EmptyLangToken, EmptyStrToken, LParenToken, RParenToken, RegexToken, SymbolToken, UnionToken, UnitRegexToken
 
 U = TypeVar('U')
+
+# NOTE: this entire module could probably use some improvements after I read
+# more about context-free languages, since regular expressions are themselves
+# a context-free language
 
 @dataclass
 class LexerConfig(Generic[U]):
@@ -33,8 +37,16 @@ DEFAULT_LEXER_CONFIG: LexerConfig[str] = LexerConfig(
     empty_lang_symbol="\o"
 )
 
+def lex_regular_expression(regular_expression: str,
+        config: LexerConfig[str] = DEFAULT_LEXER_CONFIG) -> Stream[RegexToken[str]]:
+    '''
+    Converts a regular expression encoded in a string to a stream of tokens
+    '''
+
+    return lex_regular_expression_generic(regular_expression, config)
+
 def lex_regular_expression_generic(regular_expression: Sequence[U],
-        config: LexerConfig[U]) -> Stream[RegexToken]:
+        config: LexerConfig[U]) -> Stream[RegexToken[U]]:
     '''
     Converts a regular expression defined as a list of arbitrary sequences of
     symbols, into a stream of tokens to be processed by a parser.
@@ -63,10 +75,17 @@ def lex_regular_expression_generic(regular_expression: Sequence[U],
         if alpha_match:
             continue
 
+        simple_match = False
         for token, symbol in token_symbol_map.items():
             if regular_expression[index:index + len(symbol)] == symbol:
                 tokens.append(token())
                 index += len(symbol)
+                simple_match = True
                 break
+
+        if simple_match:
+            continue
+
+        raise Exception(f'Encountered invalid symbol in regular expression: "{regular_expression[index]}"')
 
     return Stream.from_iterable(tokens)
