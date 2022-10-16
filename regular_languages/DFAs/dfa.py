@@ -47,6 +47,9 @@ class DFA(Generic[T, U]):
         if not self.accept_states.issubset(self.states):
             raise Exception('The accept states are not a subset of the valid states')
 
+        if len(self.alphabet) == 0:
+            raise Exception('The alphabet was empty, but must be nonempty')
+
         for state, symbol in product(self.states, self.alphabet):
             if self.transition_function(state, symbol) not in self.states:
                 raise Exception(f'Transition function returned state {state}, ' +
@@ -75,6 +78,12 @@ class DFA(Generic[T, U]):
 
         return cls(states, alphabet, safe_transition_func, start_state, accept_states)
 
+    # TODO: consider allowing the alphabet to be overriden here. Either validate
+    # that the alphabet provided is a superset of the alphabet inferred, or let
+    # this alphabet augment the computed alphabet
+    # TODO: consider dropping disconnected states automatically here. The
+    # tradeoff is that is does create additional wrapping functions to restrict
+    # the domain, an alternative is deciding if the dead state is needed
     @classmethod
     def from_transition_map(cls, transition_map: TransitionMap, start_state: T,
                             accept_states: Set[T]):
@@ -163,15 +172,38 @@ class DFA(Generic[T, U]):
 
     def minimize(self):
         '''
-        Returns the unique equivalent DFA with the minimal number of states
+        Returns the unique equivalent DFA that recognizes the same language, but
+        with the minimal number of states
         '''
 
+        # TODO: create a minimize_complete function that minimizes the DFA
+        # without removing an disconnected states. Call that function in here
+        # after removing disconnected states. Since that is the most common
+        # use-case for minimizing
         # TODO: should this call drop_disconnected? Or do we consider those to
         # be separate operations?
         # TODO: the states should probably frozen sets of original states
         # We can run a renaming function to get a tranisition list if desired
         # TODO: can this remove states not connected to the start state? (e.g.
         # the dead state generated) That would be ideal
+        pass
+
+    def rename_states(self, name_map):
+        '''
+        This will return a new DFA with each state renamed accordingly (or the
+        same name kept if no mapping is provided)
+        '''
+
+        pass
+
+    def rename_states_numeric(self):
+        '''
+        Performs an automatic renaming of states to the natural numbers.
+        Possibly will assign the start state to be 0, and possibly will try to
+        make the numbers nice using BFS so that a transition list would be easy
+        to follow
+        '''
+
         pass
 
     def get_transition_map(self):
@@ -188,6 +220,9 @@ class DFA(Generic[T, U]):
         to the dead state. Good for printing out and understanding DFAs
         '''
 
+        # NOTE: not really sure how useful this is for the effort required. I
+        # would want to minimize this DFA to consolidate the dead states and at
+        # that point, how useful is it beyond minimizing?
         # TODO: I must detect all dead states
         # I feel like maybe this isn't super useful, visualizing is probably better
         pass
@@ -235,4 +270,3 @@ class DFA(Generic[T, U]):
         '''
 
         raise NotImplementedError
-

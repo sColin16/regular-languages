@@ -42,10 +42,15 @@ class NFA(Generic[T, U]):
         if not self.accept_states.issubset(self.states):
             raise Exception('The accept states are not a subset of the valid states')
 
+        if len(self.alphabet) == 0:
+            raise Exception('The alphabet was empty, but must be nonempty')
+
         for state, symbol in product(self.states, self.alphabet.union({SpecialSymbols.EMPTY})):
-            if not self.transition_function(state, symbol).issubset(self.states):
+            states = self.transition_function(state, symbol)
+            if not states.issubset(self.states):
                 raise Exception('NFA\'s transition function returned a set of states '+
-                                'that are not a subset of the valid states')
+                                'that are not a subset of the valid states: '+
+                                f'States returned: {states}. Valid States: {self.states}')
 
     @classmethod
     def from_unsafe_transition_func(cls, states: Set[T], alphabet: Set[U],
@@ -69,6 +74,9 @@ class NFA(Generic[T, U]):
 
         return cls(states, alphabet, safe_transition_func, start_state, accept_states)
 
+    # TODO: consider allowing the alphabet to be overriden here. Either validate
+    # that the alphabet provided is a superset of the alphabet inferred, or let
+    # this alphabet augment the computed alphabet
     @classmethod
     def from_transition_map(cls, transition_map: TransitionMap[T, U], start_state: T,
                             accept_states: Set[T]):
@@ -148,7 +156,7 @@ class NFA(Generic[T, U]):
         curr_states = self.epsilon_closure(curr_states)
 
         for symbol in test_string:
-            next_states = set.union(*(self.transition_function(state, symbol)
+            next_states = set().union(*(self.transition_function(state, symbol)
                                      for state in curr_states))
 
             curr_states = self.epsilon_closure(next_states)
