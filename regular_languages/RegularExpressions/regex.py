@@ -1,13 +1,17 @@
 from dataclasses import dataclass
-from typing import Generic, Set, TypeVar
+from typing import Callable, Generic, Optional, Set, TypeVar
 
-from .regex_ast import RegexAST
+from .regex_ast import RegexAST, extract_alphabet
 
-# TODO: can we somehow include convenience operators like question mark, dot,
-# min/max/exact count, etc? Or would that make some of the normal form stuff
-# more complicated?
+# TODO: provide an augmented provider than can compile other operators to the
+# operators defined here (question mark, plus, min/max/exact count)
+# TODO: consider creating an augmented ast that cnopiles more advanced operators
+# to an NFA directly
 
 U = TypeVar('U')
+
+# TODO: define a default compiler
+DEFAULT_REGEX_COMPILER = None
 
 @dataclass
 class Regex(Generic[U]):
@@ -24,21 +28,30 @@ class Regex(Generic[U]):
         pass
 
     @classmethod
-    def from_string(cls, regular_expression: str, alphabet: Set[U] | None = None):
+    def from_string(cls, regular_expression: str, alphabet: Optional[Set[U]] = None,
+                    compiler: Optional[Callable[[str], RegexAST]] = None):
         '''
         Compiles the given regular expression into an internal representation
         '''
 
-        # TODO: automatically detect the alphabet if None is passed
+        if compiler is None:
+            compiler = DEFAULT_REGEX_COMPILER
 
-        # TODO: I think we should call a compile function externally
-        # Also, this is probably going to limit us to a character-based alphabet
-        # which is fine. If you build your own AST with other symbols all this
-        # should work
-        pass
+        ast = compiler(regular_expression)
+        implicit_alphabet = extract_alphabet(ast)
 
+        final_alphabet = alphabet
 
-    def as_string(self) -> str:
+        if alphabet is None:
+            final_alphabet = implicit_alphabet
+
+        elif not implicit_alphabet.issubset(alphabet):
+            raise Exception('The defined alphabet for the regex is not a ' +
+                            'subset of the alphabet implied by the regex')
+
+        return cls(final_alphabet, ast)
+
+    def to_string(self) -> str:
         '''
         Converts the internal representation of the regex to a string (which
         could be used to construct a regex
@@ -53,7 +66,7 @@ class Regex(Generic[U]):
 
         pass
 
-    def as_DNF(self):
+    def to_DNF(self):
         '''
         Returns a new DNF that places the regex in disjunctive normal form: the
         union of regular expressions consisting only of concatenation and
