@@ -1,7 +1,6 @@
 from __future__ import annotations
-from ast import Set
 from dataclasses import dataclass
-from typing import Generic, TypeVar
+from typing import Generic, Set, TypeVar
 
 U = TypeVar('U')
 
@@ -32,7 +31,5 @@ class SymbolNode(Generic[U]):
 
 RegexAST = ConcatNode | UnionNode | ClosureNode | SymbolNode[U] | EmptyStrNode | EmptyLangNode
 
-def extract_alphabet(regex_ast: RegexAST) -> Set[U]:
-
-
+def extract_alphabet(regex_ast: RegexAST[U]) -> Set:
     pass

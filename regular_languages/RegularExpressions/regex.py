@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, Set, TypeVar
 
-from .regex_ast import RegexAST, extract_alphabet
+from .regex_ast import EmptyLangNode, RegexAST, extract_alphabet
 
 # TODO: provide an augmented provider than can compile other operators to the
 # operators defined here (question mark, plus, min/max/exact count)
@@ -11,7 +11,8 @@ from .regex_ast import RegexAST, extract_alphabet
 U = TypeVar('U')
 
 # TODO: define a default compiler
-DEFAULT_REGEX_COMPILER = None
+def DEFAULT_REGEX_COMPILER(input: str):
+    return EmptyLangNode()
 
 @dataclass
 class Regex(Generic[U]):
@@ -29,23 +30,17 @@ class Regex(Generic[U]):
 
     @classmethod
     def from_string(cls, regular_expression: str, alphabet: Optional[Set[U]] = None,
-                    compiler: Optional[Callable[[str], RegexAST]] = None):
+                    compiler: Callable[[str], RegexAST] = DEFAULT_REGEX_COMPILER):
         '''
         Compiles the given regular expression into an internal representation
         '''
 
-        if compiler is None:
-            compiler = DEFAULT_REGEX_COMPILER
-
         ast = compiler(regular_expression)
         implicit_alphabet = extract_alphabet(ast)
 
-        final_alphabet = alphabet
+        final_alphabet = implicit_alphabet if alphabet is None else alphabet
 
-        if alphabet is None:
-            final_alphabet = implicit_alphabet
-
-        elif not implicit_alphabet.issubset(alphabet):
+        if alphabet is not None and not implicit_alphabet.issubset(alphabet):
             raise Exception('The defined alphabet for the regex is not a ' +
                             'subset of the alphabet implied by the regex')
 
