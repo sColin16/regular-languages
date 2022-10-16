@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import combinations
 from regular_languages import DFA
 from regular_languages import NFA
 from regular_languages.DFAs.dfa import TransitionMap
@@ -44,7 +45,16 @@ def NFA_to_DFA_complete(nfa: NFA) -> DFA:
     simulate the NFA from a set of states not reachable from the start state
     '''
 
-    # This should mainly just be function composition
-    # No, wait I think we want to do the precomputation since that's kinda the point of having the DFA
+    def powerset(input_set):
+        return set().union(*((frozenset(c) for c in combinations(input_set, r)) for r in range(len(input_set))))
 
-    raise NotImplementedError
+    states = powerset(nfa.states)
+    transition_map = {
+        state: {
+            symbol: frozenset(nfa.simulate([symbol], state)) for symbol in nfa.alphabet
+        } for state in states
+    }
+    start_state = frozenset(nfa.epsilon_closure({nfa.start_state}))
+    accept_states = {state for state in states if len(state.intersection(nfa.accept_states)) > 0}
+
+    return DFA.from_transition_map(transition_map, start_state, accept_states)
