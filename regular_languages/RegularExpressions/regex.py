@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, Set, TypeVar
 
+from regular_languages.RegularExpressions.regex_compiler import compile_regular_expression
+
 from .regex_ast import EmptyLangNode, RegexAST, extract_alphabet
 
 # TODO: provide an augmented provider than can compile other operators to the
@@ -10,9 +12,7 @@ from .regex_ast import EmptyLangNode, RegexAST, extract_alphabet
 
 U = TypeVar('U')
 
-# TODO: define a default compiler
-def DEFAULT_REGEX_COMPILER(input: str):
-    return EmptyLangNode()
+DEFAULT_REGEX_COMPILER = compile_regular_expression
 
 @dataclass
 class Regex(Generic[U]):

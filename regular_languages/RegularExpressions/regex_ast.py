@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass
-from typing import Generic, Set, TypeVar
+from typing import Generic, Sequence, Set, TypeVar
 
 U = TypeVar('U')
 
@@ -26,10 +26,23 @@ class EmptyStrNode:
 class EmptyLangNode:
     pass
 
+# TODO: clean up this being a sequence, it doesn't make a ton of sense
+@dataclass
 class SymbolNode(Generic[U]):
-    symbol: U
+    symbol: Sequence[U]
 
 RegexAST = ConcatNode | UnionNode | ClosureNode | SymbolNode[U] | EmptyStrNode | EmptyLangNode
 
 def extract_alphabet(regex_ast: RegexAST[U]) -> Set:
-    pass
+    match regex_ast:
+        case UnionNode(left, right) | ConcatNode(left, right):
+            return extract_alphabet(left).union(extract_alphabet(right))
+
+        case ClosureNode(child):
+            return extract_alphabet(child)
+
+        case SymbolNode(symbol):
+            return {symbol}
+
+        case EmptyStrNode() | EmptyLangNode():
+            return set()

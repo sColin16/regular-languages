@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generic, Iterable, List, TypeVar
+from typing import Generic, Iterable, List, Optional, TypeVar
 
 U = TypeVar('U')
 
@@ -16,7 +16,7 @@ class Stream(Generic[U]):
     def from_iterable(cls, data: Iterable[U]):
         return cls(list(data), 0)
 
-    def peek(self, offset: int = 0) -> U:
+    def peek(self, offset: int = 0) -> Optional[U]:
         '''
         Peek at a token in the stream with the given offset
         '''
@@ -24,7 +24,7 @@ class Stream(Generic[U]):
         effective_index = self.index + offset
 
         if not 0 <= effective_index < len(self.data):
-            raise Exception('Stream access out of bounds')
+            return None
 
         return self.data[effective_index]
 
