@@ -26,7 +26,6 @@ class EmptyStrNode:
 class EmptyLangNode:
     pass
 
-# TODO: clean up this being a sequence, it doesn't make a ton of sense
 @dataclass
 class SymbolNode(Generic[U]):
     symbol: U
