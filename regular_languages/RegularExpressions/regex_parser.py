@@ -15,8 +15,6 @@ def parse_regular_expression(token_stream: Stream[RegexToken[U]]) -> RegexAST[U]
     Check out the sweet pattern matching here!
     '''
 
-    print(token_stream)
-
     stack: List[RegexAST[U] | RegexToken[U]] = []
 
     # Continue pushing or reducing until there is one node in the stack, and no
@@ -62,7 +60,9 @@ def parse_regular_expression(token_stream: Stream[RegexToken[U]]) -> RegexAST[U]
                 UnionToken(),
                 ClosureNode() | ConcatNode() | EmptyLangNode() | EmptyStrNode() | SymbolNode() | UnionNode() as right
             ] if not isinstance(token_stream.peek(), ClosureToken) and\
-                    not isinstance(token_stream.peek(), SymbolToken):
+                    not isinstance(token_stream.peek(), SymbolToken) and\
+                    not isinstance(token_stream.peek(), EmptyLangToken) and\
+                    not isinstance(token_stream.peek(), EmptyStrToken):
                 for _ in range(3): stack.pop()
                 stack.append(UnionNode(left, right))
 
