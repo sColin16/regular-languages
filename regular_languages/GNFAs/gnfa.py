@@ -3,7 +3,7 @@ from enum import Enum, auto
 from typing import Dict, Generic, Literal, Set, TypeVar
 
 from regular_languages import DFA
-from regular_languages.RegularExpressions.regex_ast import RegexAST, extract_alphabet
+from regular_languages.RegularExpressions.regex_ast import ClosureNode, ConcatNode, RegexAST, UnionNode, extract_alphabet
 
 class SpecialStates(Enum):
     '''
@@ -41,7 +41,26 @@ class GNFA(Generic[T, U]):
         pass
 
     def to_regexAST(self):
-        pass
+        orig_states = set(self.states)
 
-    def rip_state(self, state: T):
-        pass
+        for state in orig_states:
+            self.rip_state(state)
+
+        return self.adj_list[SpecialStates.SOURCE][SpecialStates.SINK]
+
+    def rip_state(self, rip_state: T):
+        # Update the adj list to account for the state being removed
+        for source_state in self.states.union({SpecialStates.SOURCE}).difference({rip_state}):
+            for dest_state in self.states.union({SpecialStates.SINK}).difference({rip_state}):
+                orig_ast = self.adj_list[source_state][dest_state]
+                r1 = self.adj_list[source_state][rip_state]
+                r2 = self.adj_list[rip_state][rip_state]
+                r3 = self.adj_list[rip_state][dest_state]
+
+                self.adj_list[source_state][dest_state] = UnionNode(orig_ast, ConcatNode(ConcatNode(r1, ClosureNode(r2)), r3))
+
+        # Remove the state from the list of states
+        self.states.remove(rip_state)
+
+        # Remove the state from the adj list
+        del self.adj_list[rip_state]
