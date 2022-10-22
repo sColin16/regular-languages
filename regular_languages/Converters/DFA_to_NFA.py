@@ -1,13 +1,13 @@
 from typing import Set, TypeVar
 from regular_languages import DFA
 from regular_languages import NFA
-from regular_languages.DFAs.dfa import SpecialStates
+from regular_languages.DFAs.dfa import DFASpecialStates
 from regular_languages.NFAs.nfa import SpecialSymbols
 
 T = TypeVar('T')
 U = TypeVar('U')
 
-def DFA_to_NFA(dfa: DFA[T | SpecialStates, U]) -> NFA[T | SpecialStates, U]:
+def DFA_to_NFA(dfa: DFA[T | DFASpecialStates, U]) -> NFA[T | DFASpecialStates, U]:
     '''
     Constructs an NFA that recognizes the same language as the provided DFA
     '''

@@ -11,7 +11,7 @@ TransitionFunction: TypeAlias = Callable[[T, U], T]
 TransitionMap: TypeAlias = Dict[T, Dict[U, T]]
 TransitionList: TypeAlias = List[Dict[U, int]]
 
-class SpecialStates(Enum):
+class DFASpecialStates(Enum):
     '''
     An helper enum to internally define dead states. This should be treated as
     internal and should not be used to define DFA states externally
@@ -26,7 +26,7 @@ class DFA(Generic[T, U]):
     given type, based on the five components of a DFA
     '''
 
-    states: Set[T | SpecialStates]
+    states: Set[T | DFASpecialStates]
     alphabet: Set[U]
     transition_function: TransitionFunction
     start_state: T
@@ -56,7 +56,7 @@ class DFA(Generic[T, U]):
                                 'which is not a valid state')
 
     @classmethod
-    def from_unsafe_transition_func(cls, states: Set[T | SpecialStates], alphabet: Set[U],
+    def from_unsafe_transition_func(cls, states: Set[T | DFASpecialStates], alphabet: Set[U],
                                     unsafe_transition_func: TransitionFunction,
                                     start_state: T, accept_states: Set[T]):
         '''
@@ -97,15 +97,15 @@ class DFA(Generic[T, U]):
         # Unpack the states and alphabet implied in the transition map
         states = set(transition_map.keys())\
                     .union(*(transitions.values() for transitions in transition_map.values()))\
-                    .union({SpecialStates.DEAD})
+                    .union({DFASpecialStates.DEAD})
         alphabet = set().union(*(transitions.keys() for transitions in transition_map.values()))
 
-        def unsafe_transition_func(state: T, symbol: U) -> T | SpecialStates:
-            if state is SpecialStates.DEAD or state not in transition_map:
-                return SpecialStates.DEAD
+        def unsafe_transition_func(state: T, symbol: U) -> T | DFASpecialStates:
+            if state is DFASpecialStates.DEAD or state not in transition_map:
+                return DFASpecialStates.DEAD
 
             if symbol not in transition_map[state]:
-                return SpecialStates.DEAD
+                return DFASpecialStates.DEAD
 
             return transition_map[state][symbol]
 
