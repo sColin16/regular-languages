@@ -1,33 +1,31 @@
 from dataclasses import dataclass
-from typing import Dict, List, Generic, Sequence, Set, Type, TypeVar
+from typing import Dict, List, Set, Type
 
 from regular_languages.helpers import Stream
 from .regex_tokens import ClosureToken, EmptyLangToken, EmptyStrToken, LParenToken, RParenToken, RegexToken, SymbolToken, UnionToken, UnitRegexToken
-
-U = TypeVar('U')
 
 # NOTE: this entire module could probably use some improvements after I read
 # more about context-free languages, since regular expressions are themselves
 # a context-free language
 
 @dataclass
-class LexerConfig(Generic[U]):
+class LexerConfig():
     '''
     Defines how the lexer converts symbols to tokens. This is the lexical
     grammar, but defined without regular expressions. Note that ambiguous
     configurations should be avoided, and have undefined behavior
     '''
 
-    alphabet: Set[Sequence[U]]
-    union_symbol: Sequence[U]
-    closure_symbol: Sequence[U]
-    lparen_symbol: Sequence[U]
-    rparen_symbol: Sequence[U]
-    empty_str_symbol: Sequence[U]
-    empty_lang_symbol: Sequence[U]
+    alphabet: Set[str]
+    union_symbol: str
+    closure_symbol: str
+    lparen_symbol: str
+    rparen_symbol: str
+    empty_str_symbol: str
+    empty_lang_symbol: str
 
 ALPHANUMERIC = "abcdefghijklmnopqrstuvwxyzABCEDFGHIJKLMNOPQRSTUVWXYZ0123456789"
-DEFAULT_LEXER_CONFIG: LexerConfig[str] = LexerConfig(
+DEFAULT_LEXER_CONFIG = LexerConfig(
     alphabet=set(ALPHANUMERIC),
     union_symbol="|",
     closure_symbol="*",
@@ -38,21 +36,13 @@ DEFAULT_LEXER_CONFIG: LexerConfig[str] = LexerConfig(
 )
 
 def lex_regular_expression(regular_expression: str,
-        config: LexerConfig[str] = DEFAULT_LEXER_CONFIG) -> Stream[RegexToken[str]]:
+        config = DEFAULT_LEXER_CONFIG) -> Stream[RegexToken[str]]:
     '''
-    Converts a regular expression encoded in a string to a stream of tokens
-    '''
-
-    return lex_regular_expression_generic(regular_expression, config)
-
-def lex_regular_expression_generic(regular_expression: Sequence[U],
-        config: LexerConfig[U]) -> Stream[RegexToken[U]]:
-    '''
-    Converts a regular expression defined as a list of arbitrary sequences of
-    symbols, into a stream of tokens to be processed by a parser.
+    Converts a regular expression encoded in a string to a stream of tokens.
+    Supporting lexing for non-strings doesn't seems worthwhile
     '''
 
-    token_symbol_map: Dict[Type[UnitRegexToken], Sequence[U]] = {
+    token_symbol_map: Dict[Type[UnitRegexToken], str] = {
         UnionToken: config.union_symbol,
         ClosureToken: config.closure_symbol,
         LParenToken: config.lparen_symbol,
@@ -61,7 +51,7 @@ def lex_regular_expression_generic(regular_expression: Sequence[U],
         EmptyLangToken: config.empty_lang_symbol
     }
     index = 0
-    tokens: List[RegexToken[U]] = []
+    tokens: List[RegexToken[str]] = []
 
     while index < len(regular_expression):
         alpha_match = False

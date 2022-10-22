@@ -74,12 +74,9 @@ class NFA(Generic[T, U]):
 
         return cls(states, alphabet, safe_transition_func, start_state, accept_states)
 
-    # TODO: consider allowing the alphabet to be overriden here. Either validate
-    # that the alphabet provided is a superset of the alphabet inferred, or let
-    # this alphabet augment the computed alphabet
     @classmethod
     def from_transition_map(cls, transition_map: TransitionMap[T, U], start_state: T,
-                            accept_states: Set[T]):
+                            accept_states: Set[T], states: Set[T] = None, alphabet: Set[U] = None):
         '''
         Constructs an NFA from a transition map, a nested dictionary that
         impliclty defines the alphabet and set of staes, and need not
@@ -88,15 +85,18 @@ class NFA(Generic[T, U]):
         '''
 
         # Unpack the states and alpjabet implied in the transition map
-        states = set(transition_map.keys())\
+        implied_states = set(transition_map.keys())\
                     .union(*(set().union(*(transitions.values())) for transitions
                              in transition_map.values()))
 
         # The empty string should not be part of the alphabet
         # Ignore the type b/c difference removes empty symbols
-        alphabet: Set[U] = set().union(*(transitions.keys() for transitions
+        implicit_alphabet: Set[U] = set().union(*(transitions.keys() for transitions
                                  in transition_map.values()))\
                                          .difference({SpecialSymbols.EMPTY}) # type: ignore 
+
+        final_states = implied_states if states is None else states
+        final_alphabet = implicit_alphabet if alphabet is None else alphabet
 
         def unsafe_transition_func(state: T, symbol: U | SpecialSymbols) -> Set[T]:
             if state not in transition_map:
@@ -107,7 +107,7 @@ class NFA(Generic[T, U]):
 
             return transition_map[state][symbol]
 
-        return cls.from_unsafe_transition_func(states, alphabet, unsafe_transition_func,
+        return cls.from_unsafe_transition_func(final_states, final_alphabet, unsafe_transition_func,
                                                start_state, accept_states)
 
     @classmethod
@@ -164,6 +164,7 @@ class NFA(Generic[T, U]):
         return curr_states
 
     def test(self, test_string: List[U]) -> bool:
+        # TODO: consider having this function return false if a symbol is missing from the alphabet
         final_states = self.simulate(test_string)
 
         return any(final_state in self.accept_states for final_state in final_states)

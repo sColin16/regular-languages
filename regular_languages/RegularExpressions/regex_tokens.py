@@ -5,7 +5,7 @@ U = TypeVar('U')
 
 @dataclass
 class SymbolToken(Generic[U]):
-    symbol: Sequence[U]
+    symbol: U
 
 @dataclass
 class EmptyStrToken:
