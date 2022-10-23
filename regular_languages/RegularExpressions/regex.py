@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, Set, TypeVar
+from regular_languages.RegularExpressions.regex_to_string import regex_ast_to_string
 from regular_languages.RegularExpressions.regex_ast_to_DNF import regex_ast_to_DNF
 
 from regular_languages.RegularExpressions.regex_compiler import compile_regular_expression
@@ -61,14 +62,7 @@ class Regex(Generic[U]):
         could be used to construct a regex
         '''
 
-        # TODO: consider how much flexibility I want to build into letting
-        # arbitrary symbols stand for different elements of the parse tree. A
-        # legitimate one is + vs | for union
-        # TODO: probably just place parantheses around everything at first,
-        # later I can look back at returning a regex that omits parantheses
-        # where possible
-
-        pass
+        return regex_ast_to_string(self.ast)
 
     # TODO: consider putting this in an operators file
     # I suppose that DFA minimize should possibly also be in there too
