@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import Callable, Generic, Optional, Set, TypeVar
 
 from regular_languages.RegularExpressions.regex_compiler import compile_regular_expression
+from regular_languages.RegularExpressions.simplify_regex_ast import simplify_regex_ast
 
 from .regex_ast import RegexAST, extract_alphabet
 
@@ -43,6 +44,15 @@ class Regex(Generic[U]):
         final_alphabet = implicit_alphabet if alphabet is None else alphabet
 
         return cls(final_alphabet, ast)
+
+    def simplified(self):
+        '''
+        Converts the regex to an equivalent regex, with a possibly more compact representation
+        '''
+
+        simplified_ast = simplify_regex_ast(self.ast)
+
+        return Regex(self.alphabet, simplified_ast)
 
     def to_string(self) -> str:
         '''

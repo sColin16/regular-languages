@@ -1,11 +1,12 @@
 from collections import defaultdict
 from dataclasses import dataclass
 from enum import Enum, auto
-from typing import Dict, Generic, Literal, Set, TypeVar
+from typing import Callable, Dict, Generic, Literal, Set, TypeVar
 
 from regular_languages import DFA
 from regular_languages.DFAs.dfa import DFASpecialStates
 from regular_languages.RegularExpressions.regex_ast import ClosureNode, ConcatNode, EmptyLangNode, EmptyStrNode, RegexAST, SymbolNode, UnionNode, extract_alphabet
+from regular_languages.RegularExpressions.simplify_regex_ast import simplify_regex_ast
 
 class GNFASpecialStates(Enum):
     '''
@@ -66,15 +67,17 @@ class GNFA(Generic[T, U]):
 
         return cls(states, alphabet, adj_list)
 
-    def to_regexAST(self):
+    def to_regexAST(self, simplify: Callable[[RegexAST], RegexAST]=simplify_regex_ast):
         orig_states = set(self.states)
 
         for state in orig_states:
-            self.rip_state(state)
+            self.rip_state(state, simplify)
 
-        return self.adj_list[GNFASpecialStates.SOURCE][GNFASpecialStates.SINK]
+        final_ast = self.adj_list[GNFASpecialStates.SOURCE][GNFASpecialStates.SINK]
 
-    def rip_state(self, rip_state: T):
+        return simplify(final_ast)
+
+    def rip_state(self, rip_state: T, simplify):
         # Update the adj list to account for the state being removed
         for source_state in self.states.union({GNFASpecialStates.SOURCE}).difference({rip_state}):
             for dest_state in self.states.union({GNFASpecialStates.SINK}).difference({rip_state}):
@@ -83,7 +86,8 @@ class GNFA(Generic[T, U]):
                 r2 = self.adj_list[rip_state][rip_state]
                 r3 = self.adj_list[rip_state][dest_state]
 
-                self.adj_list[source_state][dest_state] = UnionNode(orig_ast, ConcatNode(ConcatNode(r1, ClosureNode(r2)), r3))
+                new_ast = UnionNode(orig_ast, ConcatNode(ConcatNode(r1, ClosureNode(r2)), r3))
+                self.adj_list[source_state][dest_state] = new_ast
 
         # Remove the state from the list of states
         self.states.remove(rip_state)
