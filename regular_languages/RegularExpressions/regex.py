@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from typing import Callable, Generic, Optional, Set, TypeVar
+from regular_languages.RegularExpressions.regex_ast_to_DNF import regex_ast_to_DNF
 
 from regular_languages.RegularExpressions.regex_compiler import compile_regular_expression
 from regular_languages.RegularExpressions.simplify_regex_ast import simplify_regex_ast
@@ -69,19 +70,16 @@ class Regex(Generic[U]):
 
         pass
 
+    # TODO: consider putting this in an operators file
+    # I suppose that DFA minimize should possibly also be in there too
     def to_DNF(self):
         '''
-        Returns a new DNF that places the regex in disjunctive normal form: the
-        union of regular expressions consisting only of concatenation and
-        closures (and perhaps other operators like the question mark if I add them)
+        Returns a new regex that places the regex in disjunctive normal form:
+        the union of regular expressions consisting only of concatenation and
+        closures
         '''
 
-        # TODO: consider putting this in an operators file
-        # I suppose that DFA minimize should possibly also be in there too
-        # This should be possible to perform this recursively, bubbling up the
-        # union operators to the top of the tree
-        # The difficult part is handling the fact that the union operation is
-        # binary, but DNF could be the union of an abritrary number of pieces.
-        # Is that easy to handle?
+        ast_in_DNF = regex_ast_to_DNF(self.ast)
 
-        pass
+        return Regex(self.alphabet, ast_in_DNF)
+

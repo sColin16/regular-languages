@@ -20,7 +20,6 @@ languages are closed, and be converted to any regular language representation
 ## In Progress
 - DFA minimization
 - Converting regex to string
-- Putting a regex in disjunctive normal form
 - Supporting more advanced regex operations
 - The regular language abstraction
 - Most of the regular language operations
