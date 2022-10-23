@@ -1,7 +1,7 @@
 from .regex_ast import RegexAST
 from regular_languages.RegularExpressions.regex_ast import ClosureNode, ConcatNode, EmptyLangNode, EmptyStrNode, SymbolNode, UnionNode
 
-def simplify_regex_ast(ast: RegexAST):
+def simplify_regex_ast(ast: RegexAST) -> RegexAST:
     '''
     Simplifies a regex ast using the algebraic properties of ASTs
     Useful for simplifying an AST generated using a GNFA
@@ -31,9 +31,8 @@ def simplify_regex_ast(ast: RegexAST):
                 case ClosureNode(ClosureNode(a)):
                     return ClosureNode(a)
 
-                # No simplification identified
-                case node:
-                    return node
+            # No simplification identified
+            return ClosureNode(simplified_child)
 
         case UnionNode(left, right):
             left_simplified = simplify_regex_ast(left)
@@ -60,9 +59,8 @@ def simplify_regex_ast(ast: RegexAST):
                         if a == b:
                     return ClosureNode(a)
 
-                # No simplifications identified
-                case node:
-                    return node
+            # No simplifications identified
+            return UnionNode(left_simplified, right_simplified)
 
         case ConcatNode(left, right):
             left_simplified = simplify_regex_ast(left)
@@ -80,8 +78,9 @@ def simplify_regex_ast(ast: RegexAST):
 
                 # Concatenation of identical closures is redundant
                 case ConcatNode(ClosureNode(a), ClosureNode(b)) if a == b:
-                    return ConcatNode(ClosureNode(a))
+                    return ClosureNode(a)
 
-                # No simplifications identified
-                case node:
-                    return node
+            # No simplifications identified
+            return ConcatNode(left_simplified, right_simplified)
+
+    raise Exception('A problem occured simplifying the regular expression')

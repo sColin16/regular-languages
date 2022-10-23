@@ -77,7 +77,7 @@ class GNFA(Generic[T, U]):
 
         return simplify(final_ast)
 
-    def rip_state(self, rip_state: T, simplify):
+    def rip_state(self, rip_state: T | DFASpecialStates, simplify):
         # Update the adj list to account for the state being removed
         for source_state in self.states.union({GNFASpecialStates.SOURCE}).difference({rip_state}):
             for dest_state in self.states.union({GNFASpecialStates.SINK}).difference({rip_state}):
