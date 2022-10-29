@@ -3,12 +3,12 @@ A library to explore regular languages, and their various representations
 
 Inspired by a reading of "Introduction to the Theory of Computation" by Michael
 Sipser and "Introduction to Automata Theory, Languages, and Computation" by
-Hopcroft, et. al.
+Hopcroft, et al.
 
 The library includes:
 - Implementations of NFAs, DFAs, and regular expressions
 - Functions to convert between NFA, DFAs, and regular expressions
-- Function to perform operations that are closed for regular languages, like
+- Functions to perform operations that are closed for regular languages, like
 union, intersection, complement, and more
 - A regular language abstraction that can be instantiated using any regular
 language representation, have any operation performed on it for which regular
@@ -18,10 +18,10 @@ languages are closed, and be converted to any regular language representation
   complement of a regular expression
 
 ## In Progress
-- DFA minimization
-- Supporting more advanced regex operations
-- The regular language abstraction
+- Determining if two DFAs are equivalent
 - Most of the regular language operations
+- The regular language abstraction
+- Supporting more advanced regex operations
 - FA state renaming
 
 ## Usage
