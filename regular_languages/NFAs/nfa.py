@@ -13,6 +13,7 @@ class SpecialSymbols(Enum):
 
 T = TypeVar('T')
 U = TypeVar('U')
+V = TypeVar('V')
 
 TransitionFunction = Callable[[T, U | SpecialSymbols], Set[T]]
 TransitionMap = Dict[T, Dict[U | SpecialSymbols, Set[T]]]
@@ -168,3 +169,32 @@ class NFA(Generic[T, U]):
         final_states = self.simulate(test_string)
 
         return any(final_state in self.accept_states for final_state in final_states)
+
+    def rename_states(self, name_map: Dict[T, V]):
+        inv_name_map = {
+            value: key for key, value in name_map.items()
+        }
+
+        if len(inv_name_map) != len(name_map):
+            raise Exception('Invalid name map: the provided map had non-unique mappings')
+
+        states = set(name_map.values())
+        alphabet = self.alphabet
+
+        def transition_function(state, symbol):
+            orig_state = inv_name_map[state]
+            orig_result = self.transition_function(orig_state, symbol)
+
+            return {name_map[state] for state in orig_result}
+
+        start_state = name_map[self.start_state]
+        accept_states = {name_map[accept_state] for accept_state in self.accept_states}
+
+        return NFA.from_unsafe_transition_func(states, alphabet, transition_function, start_state, accept_states)
+
+    def rename_states_numeric(self):
+        name_map = {
+            state: i for state, i in zip(self.states, range(len(self.states)))
+        }
+
+        return self.rename_states(name_map)

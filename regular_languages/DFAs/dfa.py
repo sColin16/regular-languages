@@ -6,6 +6,7 @@ from typing import Callable, Dict, Generic, List, Set, TypeAlias, TypeVar
 
 T = TypeVar('T')
 U = TypeVar('U')
+V = TypeVar('V')
 
 TransitionFunction: TypeAlias = Callable[[T, U], T] 
 TransitionMap: TypeAlias = Dict[T, Dict[U, T]]
@@ -170,31 +171,32 @@ class DFA(Generic[T, U]):
                     self.transition_function, self.start_state,
                     self.accept_states.intersection(reachable))
 
-    def minimize(self):
-        '''
-        Returns the unique equivalent DFA that recognizes the same language, but
-        with the minimal number of states
-        '''
-
-        # TODO: create a minimize_complete function that minimizes the DFA
-        # without removing an disconnected states. Call that function in here
-        # after removing disconnected states. Since that is the most common
-        # use-case for minimizing
-        # TODO: should this call drop_disconnected? Or do we consider those to
-        # be separate operations?
-        # TODO: the states should probably frozen sets of original states
-        # We can run a renaming function to get a tranisition list if desired
-        # TODO: can this remove states not connected to the start state? (e.g.
-        # the dead state generated) That would be ideal
-        pass
-
-    def rename_states(self, name_map):
+    def rename_states(self, name_map: Dict[T, V | DFASpecialStates]):
         '''
         This will return a new DFA with each state renamed accordingly (or the
         same name kept if no mapping is provided)
         '''
 
-        pass
+        inv_name_map = {
+            value: key for key, value in name_map.items()
+        }
+
+        if len(inv_name_map) != len(name_map):
+            raise Exception('Invalid name map: the provided name map had non-unique mappings')
+
+        states = set(name_map.values())
+        alphabet = self.alphabet
+
+        def transition_function(state, symbol):
+            orig_state = inv_name_map[state]
+            orig_result = self.transition_function(orig_state, symbol)
+
+            return name_map[orig_result]
+
+        start_state = name_map[self.start_state]
+        accept_states = {name_map[accept_state] for accept_state in self.accept_states}
+
+        return DFA.from_unsafe_transition_func(states, alphabet, transition_function, start_state, accept_states)
 
     def rename_states_numeric(self):
         '''
@@ -204,7 +206,11 @@ class DFA(Generic[T, U]):
         to follow
         '''
 
-        pass
+        name_map = {
+            state: i for state, i in zip(self.states, range(len(self.states)))
+        }
+
+        return self.rename_states(name_map)
 
     def get_transition_map(self):
         '''

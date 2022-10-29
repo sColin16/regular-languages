@@ -22,7 +22,6 @@ languages are closed, and be converted to any regular language representation
 - Most of the regular language operations
 - The regular language abstraction
 - Supporting more advanced regex operations
-- FA state renaming
 
 ## Usage
 - Run with Python 3.10. Because that includes some really nice typing
