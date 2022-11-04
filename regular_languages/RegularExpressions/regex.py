@@ -6,7 +6,8 @@ from regular_languages.RegularExpressions.regex_ast_to_DNF import regex_ast_to_D
 from regular_languages.RegularExpressions.regex_compiler import compile_regular_expression
 from regular_languages.RegularExpressions.simplify_regex_ast import simplify_regex_ast
 
-from .regex_ast import RegexAST, extract_alphabet
+from .regex_ast import RegexAST
+from .extract_alphabet import extract_alphabet
 
 # TODO: provide an augmented provider than can compile other operators to the
 # operators defined here (question mark, plus, min/max/exact count)

@@ -5,7 +5,8 @@ from typing import Callable, Dict, Generic, Literal, Set, TypeVar
 
 from regular_languages import DFA
 from regular_languages.DFAs.dfa import DFASpecialStates
-from regular_languages.RegularExpressions.regex_ast import ClosureNode, ConcatNode, EmptyLangNode, EmptyStrNode, RegexAST, SymbolNode, UnionNode, extract_alphabet
+from regular_languages.RegularExpressions.regex_ast import ClosureNode, ConcatNode, EmptyLangNode, EmptyStrNode, RegexAST, SymbolNode, UnionNode
+from regular_languages.RegularExpressions.extract_alphabet import extract_alphabet
 from regular_languages.RegularExpressions.simplify_regex_ast import simplify_regex_ast
 
 class GNFASpecialStates(Enum):
