@@ -53,4 +53,4 @@ def regex_ast_to_string(ast: RegexAST, config=DEFAULT_PRINTER_CONFIG) -> str:
         case ClosureNode(child):
             child_str = regex_ast_to_string(child)
 
-            return f'{config.lparen_symbol}{child_str}{config.rparen_symbol}{config.closure_symbol}'
+            return f'{child_str}{config.closure_symbol}'
