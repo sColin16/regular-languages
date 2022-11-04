@@ -48,9 +48,6 @@ class DFA(Generic[T, U]):
         if not self.accept_states.issubset(self.states):
             raise Exception('The accept states are not a subset of the valid states')
 
-        if len(self.alphabet) == 0:
-            raise Exception('The alphabet was empty, but must be nonempty')
-
         for state, symbol in product(self.states, self.alphabet):
             if self.transition_function(state, symbol) not in self.states:
                 raise Exception(f'Transition function returned state {state}, ' +

@@ -43,9 +43,6 @@ class NFA(Generic[T, U]):
         if not self.accept_states.issubset(self.states):
             raise Exception('The accept states are not a subset of the valid states')
 
-        if len(self.alphabet) == 0:
-            raise Exception('The alphabet was empty, but must be nonempty')
-
         for state, symbol in product(self.states, self.alphabet.union({SpecialSymbols.EMPTY})):
             states = self.transition_function(state, symbol)
             if not states.issubset(self.states):
